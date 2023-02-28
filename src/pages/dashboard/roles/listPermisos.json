@@ -1,0 +1,53 @@
+[
+  {
+    "label": "Seleccionar todos los permisos",
+    "children": [
+      {
+        "label": "Usuario",
+        "children": [
+          { "label": "Ver Usuarios", "id": 2 },
+          { "label": "Agregar Usuario", "id": 3 },
+          { "label": "Editar Usuario", "id": 4 },
+          { "label": "Inactivar Usuario", "id": 5 },
+          { "label": "Activar Usuario", "id": 6 },
+          { "label": "Eliminar Usuario", "id": 7 }
+        ]
+      },
+      {
+        "label": "Proveedores",
+        "children": [
+          { "label": "Ver Proveedores", "id": 18 },
+          { "label": "Agregar Proveedor", "id": 19 },
+          { "label": "Editar Proveedor", "id": 20 },
+          { "label": "Activar Proveedor", "id": 21 },
+          { "label": "Inactivar Proveedor", "id": 22 }
+        ]
+      },
+      {
+        "label": "Roles",
+        "children": [
+          { "label": "Ver Roles", "id": 8 },
+          { "label": "Agregar Rol", "id": 9 },
+          { "label": "Editar Rol", "id": 10 },
+          { "label": "Eliminar Rol", "id": 11 }
+        ]
+      },
+      {
+        "label": "Articulos",
+        "children": [
+          { "label": "Ver Articulos", "id": 12 },
+          { "label": "Agregar Articulo", "id": 13 },
+          { "label": "Editar Articulo", "id": 14 },
+          { "label": "Eliminar Articulo", "id": 15 }
+        ]
+      },
+      {
+        "label": "Ventas",
+        "children": [
+          { "label": "Ver Ventas", "id": 16 },
+          { "label": "Agregar Venta", "id": 17 }
+        ]
+      }
+    ]
+  }
+]
