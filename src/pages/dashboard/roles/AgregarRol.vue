@@ -25,7 +25,8 @@
           </div>
 
           <div class="col-xs-9 col-sm-12  flex justify-center">
-            <q-btn label="Guardar" class="q-px-xl" type="submit" color="green-9">
+            <q-btn label="Guardar" class="q-px-xl" :loading="loading"
+              type="submit" color="green-9">
             </q-btn>
           </div>
         </div>
@@ -45,6 +46,7 @@ export default defineComponent({
   name: 'AgregarRol',
   setup (_,  { emit }) {
     const nombreRol = ref('');
+    const loading = ref( false );
     const rolesSelected = ref([]);
     const $q = useQuasar();
     const { encontrarPermisosId } = useRolPermisos();
@@ -65,6 +67,7 @@ export default defineComponent({
       }
 
       try {
+        loading.value = true;
         await Api.post('/roles', formRol)
         emit('actualizarLista');
         $q.notify({
@@ -72,6 +75,7 @@ export default defineComponent({
           message: 'Rol Agregado Exitosamente',
           position: 'top-right'
         })
+        loading.value = false;
       } catch (error) {
         alert(error);
       }
@@ -86,6 +90,7 @@ export default defineComponent({
       expanded: ref(['Seleccionar todos los permisos' ]),
       rolesSelected,
       listPermisos,
+      loading,
       submit
     }
   }

@@ -8,9 +8,9 @@
           <template v-slot:append>
             <q-icon name="event" class="cursor-pointer">
               <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                <q-date v-model="formFiltrarVentas.desde">
+                <q-date v-model="formFiltrarVentas.desde" :locale="myLocale">
                   <div class="row items-center justify-end">
-                    <q-btn v-close-popup label="Close" color="primary" flat />
+                    <q-btn v-close-popup label="Cerrar" color="primary" flat />
                   </div>
                 </q-date>
               </q-popup-proxy>
@@ -26,9 +26,9 @@
           <template v-slot:append>
             <q-icon name="event" class="cursor-pointer">
               <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                <q-date v-model="formFiltrarVentas.hasta">
+                <q-date v-model="formFiltrarVentas.hasta" :locale="myLocale">
                   <div class="row items-center justify-end">
-                    <q-btn v-close-popup label="Close" color="primary" flat />
+                    <q-btn v-close-popup label="Cerrar" color="primary" flat />
                   </div>
                 </q-date>
               </q-popup-proxy>
@@ -52,7 +52,8 @@
         </template>
     </q-select>
 
-    <q-btn round color="black" icon="search" class="q-ml-md" @click="filtarVentas" />
+    <q-btn round color="black" icon="search" :loading="loading"
+      class="q-ml-md" @click="filtarVentas" />
   </div>
 </template>
 
@@ -74,6 +75,7 @@ export default defineComponent({
     })
 
     const listPV = ref([]);
+    const loading = ref( false );
     const { mostrarNotify } = useHelpers();
 
     const getPV = async () => {
@@ -109,7 +111,7 @@ export default defineComponent({
         return emit('actualizarLista', data);
       }
 
-      Loading.show({message: 'Cargando...'});
+      loading.value = true;
       try {
         const { data } = await Api.post('/ventas/consulta', formFiltrarVentas.value);
         emit('actualizarLista', data);
@@ -117,15 +119,26 @@ export default defineComponent({
       } catch (error) {
         console.log(error);
       }
-      Loading.hide()
+      loading.value = false;
     }
 
     getPV();
 
     return {
       listPV,
+      loading,
       filtarVentas,
-      formFiltrarVentas
+      formFiltrarVentas,
+      myLocale: {
+        /* starting with Sunday */
+        days: 'Domingo_Lunes_Martes_Miércoles_Jueves_Viernes_Sábado'.split('_'),
+        daysShort: 'Dom_Lun_Mar_Mié_Jue_Vie_Sáb'.split('_'),
+        months: 'Enero_Febrero_Marzo_Abril_Mayo_Junio_Julio_Agosto_Septiembre_Octubre_Noviembre_Diciembre'.split('_'),
+        monthsShort: 'Ene_Feb_Mar_Abr_May_Jun_Jul_Ago_Sep_Oct_Nov_Dic'.split('_'),
+        firstDayOfWeek: 1, // 0-6, 0 - Sunday, 1 Monday, ...
+        format24h: true,
+        pluralDay: 'dias'
+      }
     }
   }
 })

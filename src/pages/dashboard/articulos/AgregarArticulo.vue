@@ -36,7 +36,8 @@
 
           <div class="offset-1 col-xs-10 col-sm-6">
             <label>Ingresar Codigo IMEI:</label>
-            <q-input dense filled v-model.trim="cod_imei" @keyup.enter="agregarDetalles" />
+            <q-input dense filled type="number"
+              v-model.trim="cod_imei" @keyup.enter="agregarDetalles" />
           </div>
 
           <div class="col-12" v-if="rows.length > 0">

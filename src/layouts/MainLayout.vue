@@ -1,7 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-header elevated>
-      <q-toolbar>
+      <q-toolbar style="background-color: #2D2D8E;">
         <q-btn
           flat
           dense
@@ -60,31 +60,43 @@ import JWT from 'jwt-client'
 const linksList = [
   {
     title: 'Usuarios',
-    icon: 'group',
+    icon: 'keyboard_arrow_right',
     link: '/usuarios',
     permisoRequerido: 'Ver Usuarios'
   },
   {
+    title: 'Puntos de Ventas',
+    icon: 'keyboard_arrow_right',
+    link: '/pv',
+    permisoRequerido: 'Ver PV'
+  },
+  {
     title: 'Proveedores',
-    icon: 'playlist_add_check',
+    icon: 'keyboard_arrow_right',
     link: '/proveedor',
     permisoRequerido: 'Ver Proveedores'
   },
   {
+    title: 'Clientes',
+    icon: 'keyboard_arrow_right',
+    link: '/clientes',
+    permisoRequerido: 'Ver Clientes'
+  },
+  {
     title: 'Roles',
-    icon: 'settings',
+    icon: 'keyboard_arrow_right',
     link: '/roles',
     permisoRequerido: 'Ver Roles'
   },
   {
     title: 'Articulos',
-    icon: 'inventory',
+    icon: 'keyboard_arrow_right',
     link: '/articulos',
     permisoRequerido: 'Ver Articulos'
   },
   {
     title: 'Ventas',
-    icon: 'shopping_cart',
+    icon: 'keyboard_arrow_right',
     link: '/ventas',
     permisoRequerido: 'Ver Ventas'
   },

@@ -1,11 +1,11 @@
 <template>
   <q-page>
-    <div class="row q-my-lg q-pl-md">
+    <div class="row q-py-lg q-pl-md">
       <div class="col-md-6">
         <label class="text-h6">Listado de Proveedores</label>
       </div>
       <div class="col-md-6 flex justify-end">
-        <q-btn color="secondary" v-if="validarPermisos('Agregar Usuario')"
+        <q-btn color="secondary" v-if="validarPermisos('Agregar Proveedor')"
         icon-right="person_add" label="Agregar Proveedor" class="q-mr-md"
         @click="modalAgregarProveedor = !modalAgregarProveedor"
         />
@@ -16,9 +16,11 @@
       <div class="col-md-12">
         <div class="q-pa-md">
           <q-table
+            class="my-sticky-header-table"
             :rows="rows"
             :columns="columns"
             :filter="filter"
+            :loading="loading"
             row-key="name">
 
             <template v-slot:top>
@@ -97,7 +99,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, watch } from 'vue'
+import { defineComponent, ref } from 'vue'
 import Api from "../../../apis/Api"
 import useRolPermisos from "../../../composables/useRolPermisos";
 import useHelpers from "../../../composables/useHelpers";
@@ -116,7 +118,7 @@ const columns = [
 ]
 
 export default defineComponent({
-  name: 'IndexUsuario',
+  name: 'IndexProveedor',
   components: { Add, Editar },
   setup () {
     const { validarPermisos } = useRolPermisos();
@@ -124,32 +126,23 @@ export default defineComponent({
     const rows = ref([]);
     const modalAgregarProveedor = ref(false);
     const modalEditarProveedor = ref(false);
+    const loading = ref( false );
     const proveedorData = ref({});
     const { mostrarNotify } = useHelpers();
-    const formUsuario = ref({
-      nombres: '',
-      apellidos: '',
-      cedula: '',
-      celular: '',
-      email: '',
-      password: '',
-    })
 
     const getProveedores = async () => {
       //ocultar modales
       modalAgregarProveedor.value = false
       modalEditarProveedor.value = false
-      Loading.show({message: 'Cargando...'});
+      loading.value = true;
       try {
         const { data: { proveedores } } = await Api.get('/proveedores');
         rows.value = proveedores;
       } catch (error) {
         alert(error)
       }
-      Loading.hide()
+      loading.value = false;
     }
-
-    getProveedores();
 
     const activarDesactivarProveedor = async (proveedor_id, estado) => {
       try {
@@ -161,20 +154,12 @@ export default defineComponent({
       }
     }
 
-    const onSubmit = async () => {
-      const resultado = await Api.post('/usuarios', formUsuario.value)
-      console.log(resultado);
-    }
-
     const editarProveedor = ( proveedor ) =>{
       proveedorData.value = proveedor;
       modalEditarProveedor.value = true;
     }
 
-    watch(formUsuario.value, (currentValue, oldValue) => {
-      formUsuario.value.nombres = currentValue.nombres.toUpperCase();
-      formUsuario.value.apellidos = currentValue.apellidos.toUpperCase()
-    });
+    getProveedores();
 
     return {
       editarProveedor,
@@ -182,10 +167,9 @@ export default defineComponent({
       modalEditarProveedor,
       activarDesactivarProveedor,
       columns,
-      formUsuario,
+      loading,
       filter,
       getProveedores,
-      onSubmit,
       isPwd: ref(true),
       rows,
       proveedorData,
@@ -194,3 +178,14 @@ export default defineComponent({
   }
 })
 </script>
+<style>
+.my-sticky-header-table .q-table__top,
+.my-sticky-header-table .q-table__bottom,
+.my-sticky-header-table thead tr:first-child th {
+  /* bg color is important for th; just specify one */
+  background-color: #ddebdc; }
+
+.my-sticky-header-table tbody tr:nth-child(even) {
+    background-color: rgb(240, 240, 240);
+}
+</style>

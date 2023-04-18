@@ -79,7 +79,8 @@
 
 
           <div class="col-xs-9 col-sm-12  flex justify-center">
-            <q-btn label="Guardar" class="q-px-xl" type="submit" color="green-9"/>
+            <q-btn label="Guardar" class="q-px-xl" :loading="loading"
+              type="submit" color="green-9"/>
           </div>
         </div>
       </q-form>
@@ -108,6 +109,7 @@ export default defineComponent({
       confirmPassword: ''
     })
     const listRoles = ref([]);
+    const loading = ref( false );
     const listPuntosVentas = ref([]);
     const $q = useQuasar()
 
@@ -146,6 +148,7 @@ export default defineComponent({
         return alert("Las contraseñas no son iguales");
 
       try {
+        loading.value = true;
         await Api.post('/usuarios', formUsuario.value)
         emit('actualizarLista');
         $q.notify({
@@ -153,8 +156,14 @@ export default defineComponent({
           message: 'Usuario Agregado Exitosamente',
           icon: 'done'
         })
+        loading.value = false;
       } catch (error) {
-        alert(error);
+        loading.value = false;
+        $q.notify({
+          color: 'warning',
+          message: error.response.data.errors[0].msg,
+          position: 'top-right'
+        })
       }
     }
 
@@ -166,6 +175,7 @@ export default defineComponent({
     return {
       listRoles,
       listPuntosVentas,
+      loading,
       formUsuario,
       onSubmit,
       isPwd: ref(true),

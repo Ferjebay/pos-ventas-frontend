@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <div class="row q-my-lg q-pl-md">
+    <div class="row q-py-lg q-pl-md">
 
       <FiltrarVentas @actualizarLista = "actualizarLista" :user="user" />
 
@@ -15,6 +15,7 @@
       <div class="col-md-12">
         <div class="q-pa-md">
           <q-table
+            class="my-sticky-header-table"
             :rows="rows"
             :columns="columns"
             :loading = "loading"
@@ -22,16 +23,45 @@
 
             <template v-slot:top>
               <label class="q-mr-xl text-h5 text-weight-regular">Listado de Ventas</label>
-
                 <label class="q-ml-xl text-subtitle1">
                   <b>TOTAL DE VENTAS:</b>
                   <q-badge outline class="q-px-md text-subtitle1 q-ml-sm text-weight-bold"
-                    color="positive" :label=" `$${totalVentas}` " />
+                    color="blue-grey" :label=" `$${ totalVentas.toFixed(2) }` " />
                 </label>
+                <label class="q-ml-lg text-subtitle1">
+                  <b>GANANCIA:</b>
+                  <q-badge outline class="q-px-md text-subtitle1 q-ml-sm text-weight-bold"
+                    color="positive"
+                    :label=" `$${ ( ganancias == null ) ? 0 : ganancias.toFixed(2) }` " />
+                </label>
+                <label class="q-ml-lg text-subtitle1">
+                  <b>PERDIDA:</b>
+                  <q-badge outline class="q-px-md text-subtitle1 q-ml-sm text-weight-bold"
+                    color="red-9" :label=" `$${ ( perdidas == null) ? 0 : perdidas.toFixed(2) }` " />
+                </label>
+
+                <q-space />
+                <q-input dense debounce="1000" color="primary" v-model="filter">
+                  <template v-slot:append>
+                    <q-icon name="search" />
+                  </template>
+                </q-input>
+            </template>
+
+            <template v-slot:body-cell-estadoVenta="props">
+              <q-td :props="props" class="estadoVenta"
+                :class="( props.row.estadoVenta > 0 ) ? 'text-green-8': 'text-negative' ">
+                ${{  ( props.row.estadoVenta !== null ) ?
+                      parseFloat(props.row.estadoVenta).toFixed(2) :
+                      0
+                  }}
+              </q-td>
             </template>
 
             <template v-slot:body-cell-total="props">
-              <q-td :props="props" class="text-h6">${{  props.row.totalPago  }}</q-td>
+              <q-td :props="props" class="totalVenta text-weight-regular">
+                ${{  props.row.totalPago.toFixed(2)  }}
+              </q-td>
             </template>
 
             <template v-slot:body-cell-estado="props">
@@ -80,7 +110,7 @@
 </template>
 
 <script>
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, watch } from 'vue'
 import Api from "../../../apis/Api"
 import { useRouter } from "vue-router";
 import useRolPermisos from "../../../composables/useRolPermisos";
@@ -98,6 +128,7 @@ const columns = [
   { name: 'usuario', label: 'Usuario', align: 'center', field: 'usuario' },
   { name: 'cliente', label: 'Cliente', align: 'center', field: 'cliente' },
   { name: 'fecha', label: 'Fecha/Hora', align: 'center', field: 'fecha' },
+  { name: 'estadoVenta', label: 'Estado de Venta', align: 'center', field: 'estadoVenta' },
   { name: 'total', label: 'Total', field: 'totalPago' },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center' }
 ]
@@ -109,7 +140,12 @@ export default defineComponent({
     const rows = ref([]);
     const router = useRouter();
     const modalDetalleFactura = ref(false);
+
     const totalVentas = ref( 0 );
+    const ganancias = ref( 0 );
+    const perdidas = ref( 0 );
+
+    const filter = ref('');
     const facturaData = ref({})
     const { validarPermisos } = useRolPermisos();
     const { mostrarNotify } = useHelpers();
@@ -122,16 +158,18 @@ export default defineComponent({
     const getVentas = async () => {
       try {
         loading.value = true;
-        const { data } = await Api.post('/ventas/consulta', {pv_id: user.pv_id});
+        const { data } = await Api.post('/ventas/consulta', { pv_id: user.pv_id, filter: filter.value });
+        totalVentas.value = 0;
+        ganancias.value   = (data.estadoVentas.ganancias == null) ? 0 : data.estadoVentas.ganancias;
+        perdidas.value    = (data.estadoVentas.perdidas == null) ? 0 : data.estadoVentas.perdidas;
 
         data.facturas.map( factura => {
           if (factura.estado) totalVentas.value += factura.totalPago
 
           const dateArray = factura.fecha.split('T')[0].split('-');
-          factura.fecha = `${ dateArray[2] }/${ dateArray[1] }/${ dateArray[0] }`
-
+          const timeArray = factura.hora.split(':');
+          factura.fecha = `${ dateArray[2] }/${ dateArray[1] }/${ dateArray[0] }  ${ timeArray[0] }:${ timeArray[1] } ${ (timeArray[0] < 12 ) ? 'am' : 'pm' }`
         })
-
         rows.value = data.facturas;
         loading.value = false;
       } catch (error) {
@@ -170,17 +208,26 @@ export default defineComponent({
 
     const actualizarLista = ( data ) => {
       totalVentas.value = 0;
+      ganancias.value   = (!data.estadoVentas) ?
+        0 : data.estadoVentas.ganancias;
+        perdidas.value  = (!data.estadoVentas) ?
+        0 : data.estadoVentas.perdidas;
       rows.value = data.facturas;
       data.facturas.map( factura => {
-
           if (factura.estado) totalVentas.value += factura.totalPago
 
           const dateArray = factura.fecha.split('T')[0].split('-');
-          factura.fecha = `${ dateArray[2] }/${ dateArray[1] }/${ dateArray[0] }`
+          const timeArray = factura.hora.split(':');
+          factura.fecha = `${ dateArray[2] }/${ dateArray[1] }/${ dateArray[0] }  ${ timeArray[0] }:${ timeArray[1] } ${ (timeArray[0] < 12 ) ? 'am' : 'pm' }`
+          factura.estadoVenta = factura.estadoVenta.toFixed(2);
       })
     }
 
     getVentas();
+
+    watch(filter, (newValue, oldValue) => {
+      getVentas();
+    })
 
     return {
       actualizarLista,
@@ -189,7 +236,10 @@ export default defineComponent({
       mostrarDetalleFactura,
       modalDetalleFactura,
       loading,
+      ganancias,
+      perdidas,
       facturaData,
+      filter,
       rows,
       router,
       totalVentas,
@@ -199,3 +249,21 @@ export default defineComponent({
   }
 })
 </script>
+
+<style scoped>
+.estadoVenta{
+  font-size: 14px;
+}
+.totalVenta{
+  font-size: 15px;
+}
+.my-sticky-header-table .q-table__top,
+.my-sticky-header-table .q-table__bottom,
+.my-sticky-header-table thead tr:first-child th {
+  /* bg color is important for th; just specify one */
+  background-color: #ddebdc; }
+
+.my-sticky-header-table tbody tr:nth-child(even) {
+    background-color: rgb(240, 240, 240);
+}
+</style>

@@ -37,7 +37,9 @@
       </div>
 
       <div class="col-md-4 q-mt-lg btnAddCliente">
-        <q-btn round color="secondary" icon="person_add" />
+        <q-btn round color="secondary"
+          @click="modalAgregarCliente = true"
+          icon="person_add" />
       </div>
     </div>
 
@@ -86,7 +88,7 @@
 
               <template v-slot:body-cell-precio_venta="props">
                 <q-td :props="props">
-                  <q-input input-class="text-center" dense required min="1"
+                  <q-input input-class="text-center" dense required min="1" step="0.01"
                   type="number" style="width: 100px;"
                   v-model.trim="props.row.precio_venta" @change="cambiarEstadoIngreso( props.row )" />
                 </q-td>
@@ -140,6 +142,11 @@
     </q-form>
   </q-page>
 
+  <!-- AGREGAR UN NUEVO CLIENTE -->
+  <q-dialog v-model="modalAgregarCliente">
+    <Add @actualizarLista="getClientes" />
+  </q-dialog>
+
 </template>
 
 <script>
@@ -150,6 +157,7 @@ import JWT from 'jwt-client'
 import { useAuthUserStore } from "stores/auth-user"
 import useHelpers from "../../../composables/useHelpers";
 import { date, useQuasar } from 'quasar'
+import Add from '../clientes/Add.vue'
 
 const columns = [
   { name: 'acciones', label: 'Quitar', align: 'left'  },
@@ -165,9 +173,11 @@ let optionsClients = []
 
 export default defineComponent({
   name: 'AddVentas',
+  components: { Add },
   setup () {
     const rows = ref([]);
     const listClientes = ref([]);
+    const modalAgregarCliente = ref(false);
     const numFacturaCargado = ref( false );
     const loadingState = ref(false)
     const { mostrarNotify } = useHelpers();
@@ -246,6 +256,8 @@ export default defineComponent({
     }
 
     const getClientes = async () => {
+      //Cerrar modal de agregar cliente
+      modalAgregarCliente.value = false;
       try {
         const { data: { clientes } } = await Api.get('/clientes');
 
@@ -318,6 +330,8 @@ export default defineComponent({
       filterArticulo,
       listClientes,
       loadingState,
+      getClientes,
+      modalAgregarCliente,
       numFacturaCargado,
       rows,
       router,

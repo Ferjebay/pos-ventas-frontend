@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <div class="row q-my-lg q-pl-md">
+    <div class="row q-py-lg q-pl-md">
       <div class="col-md-6">
         <label class="text-h6">Listado de Roles</label>
       </div>
@@ -16,7 +16,9 @@
       <div class="col-md-12">
         <div class="q-pa-md">
           <q-table v-if="validarPermisos('Ver Roles')"
+            class="my-sticky-header-table"
             :rows="rows"
+            :loading="loading"
             :columns="columns"
             row-key="name">
 
@@ -83,19 +85,20 @@ export default defineComponent({
     const modalEditarRol = ref( false );
     const { mostrarNotify } = useHelpers();
     const rolData = ref({});
+    const loading = ref( false );
     const { validarPermisos } = useRolPermisos();
 
     const getRoles = async () => {
       modalAgregarRol.value = false
       modalEditarRol.value = false
-      Loading.show({message: 'Cargando...'});
+      loading.value = true
       try {
         const { data: { roles } } = await Api.get('/roles');
         rows.value = roles;
       } catch (error) {
         alert(error)
       }
-      Loading.hide()
+      loading.value = false;
     }
 
     getRoles();
@@ -112,6 +115,7 @@ export default defineComponent({
         ok: { push: true, label:'Eliminar', color: 'teal-7' },
         cancel: { push: true, color: 'blue-grey-8', label: 'Cancelar' }
       }).onOk(async () => {
+          Loading.show({ message: 'Cargando...'})
           try {
             await Api.delete(`/roles/${ rol_id }`)
             mostrarNotify('positive', 'Rol eliminado exitosamente');
@@ -119,6 +123,7 @@ export default defineComponent({
           }catch(error) {
             mostrarNotify('negative', error.response.data.message);
           }
+          Loading.hide()
         })
     }
 
@@ -127,6 +132,7 @@ export default defineComponent({
       editarRol,
       eliminarRol,
       modalAgregarRol,
+      loading,
       modalEditarRol,
       getRoles,
       rolData,
@@ -136,3 +142,14 @@ export default defineComponent({
   }
 })
 </script>
+<style>
+.my-sticky-header-table .q-table__top,
+.my-sticky-header-table .q-table__bottom,
+.my-sticky-header-table thead tr:first-child th {
+  /* bg color is important for th; just specify one */
+  background-color: #ddebdc; }
+
+.my-sticky-header-table tbody tr:nth-child(even) {
+    background-color: rgb(240, 240, 240);
+}
+</style>

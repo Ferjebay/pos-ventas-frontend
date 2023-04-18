@@ -2,12 +2,12 @@
   <q-page>
     <div class="row q-py-lg q-pl-md">
       <div class="col-md-6">
-        <label class="text-h6">Listado de Usuarios</label>
+        <label class="text-h6">Listado de Clientes</label>
       </div>
       <div class="col-md-6 flex justify-end">
-        <q-btn color="secondary" v-if="validarPermisos('Agregar Usuario')"
-        icon-right="person_add" label="Agregar Usuario" class="q-mr-md"
-        @click="modalCrearUsuario = !modalCrearUsuario"
+        <q-btn color="secondary" v-if="validarPermisos('Agregar Cliente')"
+        icon-right="person_add" label="Agregar Cliente" class="q-mr-md"
+        @click="modalAgregarCliente = !modalAgregarCliente"
         />
       </div>
     </div>
@@ -19,14 +19,13 @@
             class="my-sticky-header-table"
             :rows="rows"
             :columns="columns"
-            :loading="loading"
             :filter="filter"
+            :loading = "loading"
             row-key="name">
 
             <template v-slot:top>
-
               <q-space />
-              <q-input dense debounce="300" color="primary" v-model="filter" label="Buscar Usuario">
+              <q-input dense debounce="300" color="primary" v-model="filter">
                 <template v-slot:append>
                   <q-icon name="search" />
                 </template>
@@ -36,12 +35,6 @@
             <template v-slot:body-cell-id="props">
               <q-td :props="props">
                 {{ props.pageIndex + 1 }}
-              </q-td>
-            </template>
-
-            <template v-slot:body-cell-pv="props">
-              <q-td :props="props">
-                {{ props.row.punto_venta }}
               </q-td>
             </template>
 
@@ -58,10 +51,9 @@
 
             <template v-slot:body-cell-acciones="props">
               <q-td :props="props">
-
                 <q-btn round color="primary"
-                v-if="validarPermisos('Editar Usuario') && props.row.estado"
-                @click="editarUsuario(props.row)"
+                v-if="validarPermisos('Editar Cliente')"
+                @click="editarCliente(props.row)"
                 icon="edit"
                 class="q-mr-sm"
                 size="11px" />
@@ -69,7 +61,7 @@
                 <template v-if="props.row.estado">
                   <q-btn round color="blue-grey"
                   icon="close"
-                  @click="activarDesactivarUser(props.row.id, false)"
+                  @click="activarDesactivarCliente(props.row.id, false)"
                   size="11px" />
                 </template>
 
@@ -77,14 +69,15 @@
                   <q-btn round color="positive"
                   class="q-mr-sm"
                   icon="done"
-                  @click="activarDesactivarUser(props.row.id, true)"
+                  @click="activarDesactivarCliente(props.row.id, true)"
                   size="11px" />
 
                   <q-btn round color="deep-orange"
                   icon="delete"
-                  @click="eliminarUsuario(props.row.id)"
+                  @click="eliminarCliente(props.row.id)"
                   size="11px" />
                 </template>
+
               </q-td>
             </template>
 
@@ -103,131 +96,112 @@
     </div>
   </q-page>
 
-  <q-dialog v-model="modalCrearUsuario">
-    <AgregarUsuario @actualizarLista="getUsuarios" />
+  <q-dialog v-model="modalAgregarCliente">
+    <Add @actualizarLista="getClientes" />
   </q-dialog>
 
-  <q-dialog v-model="modalEditarUsuario">
-    <EditarUsuario :userData="userData" @actualizarLista="getUsuarios" />
+  <q-dialog v-model="modalEditarCliente">
+    <Editar :clienteData="clienteData" @actualizarLista="getClientes" />
   </q-dialog>
 
 </template>
 
 <script>
-import { defineComponent, ref, watch } from 'vue'
+import { defineComponent, ref } from 'vue'
 import Api from "../../../apis/Api"
-import AgregarUsuario from './AgregarUsuario.vue'
-import EditarUsuario from './EditarUsuario.vue'
 import useRolPermisos from "../../../composables/useRolPermisos";
-import { Loading, Dialog } from 'quasar'
 import useHelpers from "../../../composables/useHelpers";
+import { Loading, Dialog } from 'quasar'
+import Add from './Add.vue'
+import Editar from './Editar.vue'
 const columns = [
   { name: 'id', label: '#', align: 'left', field: 'id', sortable: true },
-  { name: 'usuario', label: 'Usuario', align: 'left', field: 'usuario', sortable: true },
-  { name: 'rol', align: 'center', label: 'Rol', field: 'rol' },
-  { name: 'pv', align: 'center', label: 'Punto de Venta', field: 'punto_venta' },
+  { name: 'nombres', align: 'center', label: 'Cliente', field: 'nombres', sortable: true },
+  { name: 'tipo_documento', align: 'center', label: 'Tipo de Documento', field: 'tipo_documento' },
+  { name: 'num_documento', align: 'center', label: 'Numero de Documento', field: 'num_documento' },
   { name: 'email', label: 'Email', field: 'email', align: 'center'},
-  { name: 'cedula', label: 'Cedula', field: 'cedula',  align: 'center' },
   { name: 'celular', label: 'Celular', field: 'celular',  align: 'center' },
   { name: 'estado', label: 'Estado', align: 'center', field: 'estado' },
   { name: 'acciones', label: 'acciones', align: 'center' }
 ]
 
 export default defineComponent({
-  name: 'IndexUsuario',
-  components: { AgregarUsuario, EditarUsuario },
+  name: 'IndexCliente',
+  components: { Add, Editar },
   setup () {
     const { validarPermisos } = useRolPermisos();
     const filter = ref('')
     const rows = ref([]);
-    const loading = ref(true);
+    const modalAgregarCliente = ref(false);
+    const modalEditarCliente = ref(false);
+    const clienteData = ref({});
     const { mostrarNotify } = useHelpers();
-    const modalCrearUsuario = ref(false);
-    const modalEditarUsuario = ref(false);
-    const userData = ref({});
-    const formUsuario = ref({
-      nombres: '',
-      apellidos: '',
-      cedula: '',
-      celular: '',
-      email: '',
-      password: '',
-    })
+    const loading = ref( false )
 
-    const getUsuarios = async () => {
+    const getClientes = async () => {
       //ocultar modales
-      modalCrearUsuario.value = false
-      modalEditarUsuario.value = false
+      modalAgregarCliente.value = false
+      modalEditarCliente.value = false
       loading.value = true;
       try {
-        const { data: { usuarios } } = await Api.get('/usuarios');
-        usuarios.map( user => user.usuario = `${ user.nombres } ${ user.apellidos }` )
-        rows.value = usuarios;
+        rows.value = [];
+        const { data: { clientes } } = await Api.get('/clientes');
+        clientes.forEach(cliente => {
+          if( cliente.nombres != 'CONSUMIDOR FINAL' ) rows.value.push( cliente );
+        });
       } catch (error) {
         alert(error)
       }
       loading.value = false;
     }
 
-    getUsuarios();
-
-    const activarDesactivarUser = async (usuario_id, estado) => {
+    const activarDesactivarCliente = async (cliente_id, estado) => {
       try {
-        await Api.delete(`/usuarios/${ usuario_id }/${ estado }`)
-        mostrarNotify('positive', `Usuario ${ estado ? 'Activado' : 'Inactivado' } exitosamente`);
-        getUsuarios();
+        await Api.delete(`/clientes/${ cliente_id }/${ estado }`)
+        mostrarNotify('positive', 'Cliente eliminado exitosamente');
+        getClientes();
       } catch (error) {
         alert(error);
       }
     }
 
-    const eliminarUsuario = async (usuario_id) => {
+    const eliminarCliente = async (cliente_id) => {
       Dialog.create({
-        title: '¿Deseas Eliminar a este usuario?',
+        title: '¿Deseas Eliminar este cliente?',
         message: 'Una vez eliminado no podra recuperarse...!',
         ok: { push: true, label:'Eliminar', color: 'teal-7' },
         cancel: { push: true, color: 'blue-grey-8', label: 'Cancelar' }
       }).onOk(async () => {
           try {
-            await Api.delete(`/usuarios/${ usuario_id }`)
-            mostrarNotify('positive', 'Usuario eliminado exitosamente');
-            getUsuarios();
+            await Api.delete(`/clientes/${ cliente_id }`)
+            mostrarNotify('positive', 'Cliente eliminado exitosamente');
+            getClientes();
           }catch(error) {
             mostrarNotify('negative', error.response.data.message);
           }
         })
     }
 
-    const onSubmit = async () => {
-      const resultado = await Api.post('/usuarios', formUsuario.value)
-      console.log(resultado);
+    const editarCliente = ( cliente ) =>{
+      clienteData.value = cliente;
+      modalEditarCliente.value = true;
     }
 
-    const editarUsuario = ( user ) =>{
-      userData.value = user;
-      modalEditarUsuario.value = true;
-    }
-
-    watch(formUsuario.value, (currentValue, oldValue) => {
-      formUsuario.value.nombres = currentValue.nombres.toUpperCase();
-      formUsuario.value.apellidos = currentValue.apellidos.toUpperCase()
-    });
+    getClientes();
 
     return {
-      editarUsuario,
-      eliminarUsuario,
-      modalCrearUsuario,
-      modalEditarUsuario,
-      activarDesactivarUser,
+      editarCliente,
+      modalAgregarCliente,
+      modalEditarCliente,
+      activarDesactivarCliente,
       columns,
-      formUsuario,
       filter,
       loading,
-      getUsuarios,
-      onSubmit,
+      getClientes,
+      eliminarCliente,
       isPwd: ref(true),
       rows,
-      userData,
+      clienteData,
       validarPermisos
     }
   }

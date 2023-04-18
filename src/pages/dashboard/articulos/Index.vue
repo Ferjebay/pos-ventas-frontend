@@ -1,7 +1,9 @@
 <template>
   <q-page>
-    <div class="row q-my-lg q-pl-md">
-      <FiltrarArticulos :pagination="pagination" @actualizarLista="actualizarLista" />
+    <div class="row q-py-lg q-pl-md">
+      <FiltrarArticulos :pagination="pagination"
+        :formFiltrarArticulo="formFiltrarArticulo"
+        @actualizarLista="actualizarLista" />
 
       <div class="col-md-2 flex justify-end">
         <q-btn color="secondary" icon-right="add_circle" class="q-mr-md"
@@ -14,6 +16,7 @@
       <div class="col-md-12">
         <div class="q-pa-md">
           <q-table
+            class="my-sticky-header-table"
             ref="tableRef"
             :rows="rows"
             :columns="columns"
@@ -21,7 +24,7 @@
             row-key="id"
             v-model:pagination="pagination"
             :loading="loading"
-            :rows-per-page-options="[3, 5, 15, 0]"
+            :rows-per-page-options="[3, 7, 15, 0]"
             binary-state-sort
             @request="onRequest">
             <template v-slot:top>
@@ -99,11 +102,12 @@
   </q-page>
 
   <q-dialog v-model="modalAgregarArticulo" persistent>
-    <AgregarArticulo @actualizarLista="getArticulos" />
+    <AgregarArticulo @actualizarLista="getArticulos(0, pagination.rowsPerPage, null)" />
   </q-dialog>
 
   <q-dialog v-model="modalEditarArticulo">
-    <EditarArticulo :articuloData="articuloData" @actualizarLista="getArticulos" />
+    <EditarArticulo :articuloData="articuloData"
+      @actualizarLista="getArticulos(0, pagination.rowsPerPage, null)" />
   </q-dialog>
 
 </template>
@@ -115,7 +119,7 @@ import Api from "../../../apis/Api"
 import FiltrarArticulos from './FiltrarArticulos.vue'
 import AgregarArticulo from './AgregarArticulo.vue'
 import EditarArticulo from './EditarArticulo.vue'
-import { date, useQuasar } from 'quasar'
+import { date, useQuasar, Loading } from 'quasar'
 import useRolPermisos from "../../../composables/useRolPermisos";
 
 const columns = [
@@ -137,6 +141,13 @@ export default defineComponent({
   setup () {
     const { validarPermisos } = useRolPermisos();
     const articuloData = ref(null);
+    const formFiltrarArticulo = ref({
+      desde: '',
+      hasta: '',
+      proveedor_id: '',
+      page: '',
+      rowsPerPage: ''
+    })
 
     const modalFiltrarArticulo = ref( false );
     const modalAgregarArticulo = ref( false );
@@ -155,32 +166,37 @@ export default defineComponent({
       sortBy: 'desc',
       descending: false,
       page: 1,
-      rowsPerPage: 3,
+      rowsPerPage: 7,
       rowsNumber: 10
     })
 
-    const actualizarLista = ( filas ) => {
-      getArticulos( 0, pagination.rowsPerPage, filas )
+    const actualizarLista = ( filas = null ) => {
+      getArticulos( 0, pagination.value.rowsPerPage, filas );
     }
 
     const eliminarArticulo = async ( articulo_id ) => {
       try {
+
         $q.dialog({
           title: 'Deseas Eliminar este articulo?',
           message: 'Una vez eliminado no podra recuperarse...!',
           ok: { push: true, label:'Eliminar', color: 'teal-7' },
           cancel: { push: true, color: 'blue-grey-8', label: 'Cancelar' }
         }).onOk(async () => {
+          Loading.show({message: 'Cargando...'});
           await Api.delete(`/articulos/${ articulo_id }`)
-          getArticulos();
+          getArticulos(0, pagination.value.rowsPerPage, null);
           $q.notify({
             color: 'positive',
             message: 'Articulo Eliminado Exitosamente',
             icon: 'done',
             position: 'top-right'
           })
+          Loading.hide();
         })
+
       } catch (error) {
+        Loading.hide();
         alert(error);
       }
     }
@@ -194,24 +210,35 @@ export default defineComponent({
         modalAgregarArticulo.value = false;
         modalEditarArticulo.value = false;
         let busqueda = 0;
+        var articulos = [];
 
         if (filter.value == '') busqueda = 'sin-busqueda';
         else busqueda = filter.value
 
         try {
-          if ( filtro == null )
-            var { data: { articulos } } = await Api.get(`/articulos/${page}/${rowsPerPage}/${busqueda}`);
+          if ( filtro == null ){
+            const { data } = await Api.post(`/articulos/contarArticulos`, {
+              page,
+              rowsPerPage,
+              busqueda,
+              desde: formFiltrarArticulo.value.desde,
+              hasta: formFiltrarArticulo.value.hasta,
+              proveedor_id: formFiltrarArticulo.value.proveedor_id
+            });
+            articulos = data.articulos
+          }
           else{
-            console.log( filtro );
-            var articulos = filtro.articulos;
-            stockArticulos.value = filtro.articulosContados[0];
-            if (filtro.articulos.length == 0){
+            articulos = filtro.articulos;
+
+            if ( filtro.articulosContados != null ) stockArticulos.value = filtro.articulosContados[0];
+            else stockArticulos.value = ''
+
+            if(filtro.articulos.length == 0){
               pagination.value.rowsNumber = 0;
             }else{
               pagination.value.rowsNumber = filtro.articulos[0].totalArticulos;
             }
           }
-
           articulos.map( articulo => {
             let dateArray = articulo.fecha_creacion.split('T')[0].split('-');
             articulo.fecha_creacion = `${ dateArray[2] }/${ dateArray[1] }/${ dateArray[0] }`
@@ -263,6 +290,7 @@ export default defineComponent({
       eliminarArticulo,
       getArticulos,
       filter,
+      formFiltrarArticulo,
       modalAgregarArticulo,
       modalEditarArticulo,
       modalFiltrarArticulo,
@@ -279,3 +307,15 @@ export default defineComponent({
   }
 })
 </script>
+
+<style>
+.my-sticky-header-table .q-table__top,
+.my-sticky-header-table .q-table__bottom,
+.my-sticky-header-table thead tr:first-child th {
+  /* bg color is important for th; just specify one */
+  background-color: #ddebdc; }
+
+.my-sticky-header-table tbody tr:nth-child(even) {
+    background-color: rgb(240, 240, 240);
+}
+</style>

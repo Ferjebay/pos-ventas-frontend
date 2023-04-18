@@ -4,7 +4,7 @@
     <div class="login">
       <!-- <div> -->
       <div class="element-form">
-        <img src="~assets/img-login-test.png" />
+        <img src="~assets/logo.jpeg"  />
       </div>
       <form @submit.prevent="onSubmit" class="element-form">
           <q-input
@@ -13,9 +13,10 @@
             bg-color="blue-grey-10"
             filled label="Ingresa tu email"
             v-model.trim="form.email"
+            required
             >
             <template v-slot:prepend>
-              <q-icon name="event" color="blue-grey-3" />
+              <q-icon name="person" color="blue-grey-3" />
             </template>
           </q-input>
 
@@ -26,13 +27,14 @@
             bg-color="blue-grey-10"
             label="Ingresa tu contraseña"
             v-model.trim="form.password"
+            required
             >
             <template v-slot:prepend>
-              <q-icon name="event" color="blue-grey-3" />
+              <q-icon name="key" color="blue-grey-3" />
             </template>
           </q-input>
           <!-- <input type="submit" value="entrar" style="height: 45px;" /> -->
-          <q-btn label="Guardar"
+          <q-btn label="Ingresar"
             class="q-px-xl"
             :loading="loading"
             type="submit"
@@ -60,8 +62,8 @@ export default defineComponent({
     const loading = ref( false );
     const { mostrarNotify } = useHelpers();
     const form = ref({
-      email: "juan@gmail.com",
-      password: "123"
+      email: "",
+      password: ""
     })
 
     const router = useRouter();
@@ -115,6 +117,8 @@ export default defineComponent({
   color: #cbd0f7;
   font-size: 22px;
   font-weight: bold;
+  margin-bottom: 0px;
+  margin-top: 40px;
 }
 
 .login {
@@ -125,7 +129,7 @@ export default defineComponent({
 
   background-color: #181920;
   width: 340px;
-  height: 460px;
+  height: 494px;
   border-radius: 8px;
   padding: 35px;
 }
@@ -144,9 +148,9 @@ export default defineComponent({
 }
 
 .login img {
-  width: 6rem;
+  width: 16rem;
   height: auto;
-  margin-top: 95px;
+  margin-top: 84px;
   margin-bottom: 17px;
 }
 

@@ -14,6 +14,17 @@
         ]
       },
       {
+        "label": "Puntos de Ventas",
+        "children": [
+          { "label": "Ver PV", "id": 29 },
+          { "label": "Agregar PV", "id": 30 },
+          { "label": "Editar PV", "id": 31 },
+          { "label": "Inactivar PV", "id": 33 },
+          { "label": "Activar PV", "id": 32 },
+          { "label": "Eliminar PV", "id": 34 }
+        ]
+      },
+      {
         "label": "Proveedores",
         "children": [
           { "label": "Ver Proveedores", "id": 18 },
@@ -21,6 +32,17 @@
           { "label": "Editar Proveedor", "id": 20 },
           { "label": "Activar Proveedor", "id": 21 },
           { "label": "Inactivar Proveedor", "id": 22 }
+        ]
+      },
+      {
+        "label": "Clientes",
+        "children": [
+          { "label": "Ver Clientes", "id": 23 },
+          { "label": "Agregar Cliente", "id": 24 },
+          { "label": "Editar Cliente", "id": 25 },
+          { "label": "Activar Cliente", "id": 28 },
+          { "label": "Inactivar Cliente", "id": 27 },
+          { "label": "Eliminar Cliente", "id": 26 }
         ]
       },
       {

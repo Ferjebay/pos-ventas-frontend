@@ -4,17 +4,17 @@
     <q-input class="q-ml-md" style="width: 20%"
       filled v-model="formFiltrarArticulo.desde" dense
       mask="date" clearable clear-icon="close">
-          <template v-slot:append>
-            <q-icon name="event" class="cursor-pointer">
-              <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                <q-date v-model="formFiltrarArticulo.desde">
-                  <div class="row items-center justify-end">
-                    <q-btn v-close-popup label="Close" color="primary" flat />
-                  </div>
-                </q-date>
-              </q-popup-proxy>
-            </q-icon>
-          </template>
+        <template v-slot:append>
+          <q-icon name="event" class="cursor-pointer">
+            <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+              <q-date v-model="formFiltrarArticulo.desde" :locale="myLocale">
+                <div class="row items-center justify-end">
+                  <q-btn v-close-popup label="Close" color="primary" flat />
+                </div>
+              </q-date>
+            </q-popup-proxy>
+          </q-icon>
+        </template>
     </q-input>
 
     <label class="q-mx-md">HASTA:</label>
@@ -25,7 +25,7 @@
           <template v-slot:append>
             <q-icon name="event" class="cursor-pointer">
               <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                <q-date v-model="formFiltrarArticulo.hasta">
+                <q-date v-model="formFiltrarArticulo.hasta" :locale="myLocale">
                   <div class="row items-center justify-end">
                     <q-btn v-close-popup label="Close" color="primary" flat />
                   </div>
@@ -50,7 +50,8 @@
         </template>
     </q-select>
 
-    <q-btn round color="black" icon="search" class="q-ml-md" @click="contarArticulos" />
+    <q-btn round color="black" icon="search" :loading="loading"
+      class="q-ml-md" @click="contarArticulos" />
   </div>
 </template>
 
@@ -61,14 +62,9 @@ import useHelpers from "../../../composables/useHelpers";
 
 export default defineComponent({
   name: 'FiltrarArticulo',
-  props: ['pagination'],
+  props: ['pagination', 'formFiltrarArticulo'],
   setup(props,  { emit }) {
-
-    const formFiltrarArticulo = ref({
-      desde: '',
-      hasta: '',
-      proveedor_id: ''
-    })
+    const loading = ref( false );
     const listProveedores = ref([]);
     const { mostrarNotify } = useHelpers();
 
@@ -86,22 +82,25 @@ export default defineComponent({
     }
 
     const contarArticulos = async() => {
-      formFiltrarArticulo.value.page        = (props.pagination.page - 1) * props.pagination.rowsPerPage;
-      formFiltrarArticulo.value.rowsPerPage = props.pagination.rowsPerPage;
+      props.formFiltrarArticulo.page        = (props.pagination.page - 1) * props.pagination.rowsPerPage;
+      props.formFiltrarArticulo.rowsPerPage = props.pagination.rowsPerPage;
 
-      if ( formFiltrarArticulo.value.desde != '' && formFiltrarArticulo.value.hasta == '' )
+      if ( props.formFiltrarArticulo.desde != '' && props.formFiltrarArticulo.hasta == '' )
       return mostrarNotify('warning', 'Completa los campos de fecha de busqueda');
 
-      if ( formFiltrarArticulo.value.desde == '' && formFiltrarArticulo.value.hasta != '' )
+      if ( props.formFiltrarArticulo.desde == '' && props.formFiltrarArticulo.hasta != '' )
       return mostrarNotify('warning', 'Completa los campos de fecha de busqueda');
 
-      if ( formFiltrarArticulo.value.desde > formFiltrarArticulo.value.hasta )
+      if ( props.formFiltrarArticulo.desde > props.formFiltrarArticulo.hasta )
         return mostrarNotify('warning', 'Error en el rango de fecha de busqueda');
 
-      const { data } = await Api.post('/articulos/contarArticulos', formFiltrarArticulo.value);
-      data.desde        = formFiltrarArticulo.value.desde
-      data.hasta        = formFiltrarArticulo.value.hasta
-      data.proveedor_id = formFiltrarArticulo.value.proveedor_id
+      loading.value = true;
+
+      const { data } = await Api.post('/articulos/contarArticulos', props.formFiltrarArticulo);
+      data.desde        = props.formFiltrarArticulo.desde
+      data.hasta        = props.formFiltrarArticulo.hasta
+      data.proveedor_id = props.formFiltrarArticulo.proveedor_id
+      loading.value = false;
 
       emit('actualizarLista', data);
     }
@@ -110,8 +109,18 @@ export default defineComponent({
 
     return {
       contarArticulos,
-      formFiltrarArticulo,
-      listProveedores
+      listProveedores,
+      loading,
+      myLocale: {
+        /* starting with Sunday */
+        days: 'Domingo_Lunes_Martes_Miércoles_Jueves_Viernes_Sábado'.split('_'),
+        daysShort: 'Dom_Lun_Mar_Mié_Jue_Vie_Sáb'.split('_'),
+        months: 'Enero_Febrero_Marzo_Abril_Mayo_Junio_Julio_Agosto_Septiembre_Octubre_Noviembre_Diciembre'.split('_'),
+        monthsShort: 'Ene_Feb_Mar_Abr_May_Jun_Jul_Ago_Sep_Oct_Nov_Dic'.split('_'),
+        firstDayOfWeek: 1, // 0-6, 0 - Sunday, 1 Monday, ...
+        format24h: true,
+        pluralDay: 'dias'
+      }
     }
   }
 })
